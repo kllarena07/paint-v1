@@ -4,8 +4,7 @@ Automates voting on PaintAStreet.com with cookie rotation to minimize downtime a
 
 ## Features
 
-- **Cookie Rotation**: Automatically rotates cookies after 10 votes or when rate-limited
-- **Cloudflare Bypass**: Uses Playwright to bypass Cloudflare Turnstile
+- **Cookie Rotation**: Automatically rotates through pre-provisioned cookies after 10 votes or when rate-limited
 - **Minimal Downtime**: Efficient cookie management reduces non-voting time
 - **Comprehensive Logging**: Tracks votes, errors, and statistics
 - **Graceful Shutdown**: Handles Ctrl+C with proper cleanup
@@ -17,44 +16,51 @@ Automates voting on PaintAStreet.com with cookie rotation to minimize downtime a
 npm install
 ```
 
-2. Install Playwright browser:
-```bash
-npx playwright install chromium
-```
+2. Prepare cookies file:
+   - Create a file named `valid_cookies.txt` in the project root
+   - Add valid PaintAStreet.com session cookies, one per line
+   - Each line should contain only the session cookie value (not the full cookie string)
+   - Example content of `valid_cookies.txt`:
+     ```
+     your_cookie_value_1_here
+     your_cookie_value_2_here
+     your_cookie_value_3_here
+     ```
 
 ## Usage
 
 Start the voting system:
+```bash
+node simple-voter.js
+```
+
+Or update package.json and use:
 ```bash
 npm start
 ```
 
 ## How It Works
 
-1. **Cookie Generation**: 
-   - Launches browser (visible mode required for Turnstile)
-   - Navigates to specific tile page
-   - Clicks "upvote" button to trigger Cloudflare Turnstile
-   - Monitors session cookie for changes (indicates Turnstile completion)
-   - Extracts vote-specific cookie
-2. **Voting Loop**: Casts votes every 1 second using current cookie
+1. **Cookie Loading**: Loads pre-provisioned session cookies from `valid_cookies.txt`
+2. **Voting Loop**: Casts votes every 2 seconds using current cookie
 3. **Rate Limit Handling**: 
-   - Tracks vote count (max 10 per cookie)
-   - Detects rate limit errors
-   - Automatically rotates cookies when needed
-4. **Statistics**: Displays stats every 60 seconds
+    - Tracks vote count (max 10 per cookie)
+    - Detects rate limit errors
+    - Automatically rotates to next cookie when needed
+4. **Statistics**: Displays stats after each successful vote
 
 ## Rate Limit Details
 
 - **Votes per cookie**: 10
-- **Vote interval**: 1 second
+- **Vote interval**: 2 seconds
 - **Rate limit window**: ~10 minutes
 - **Cookie rotation**: Every 10 votes or on rate limit error
+- **Cookie source**: Read from `valid_cookies.txt` file
 
 ## Architecture
 
 ```
-Main Loop (1 vote/second)
+Main Loop (1 vote/2 seconds)
     ↓
 Check cookie usage (< 10 votes?)
     ↓ Yes
@@ -66,40 +72,38 @@ Wait for next interval
 
 If cookie usage >= 10:
     ↓
-Cookie Manager
+Rotate to next cookie in valid_cookies.txt
     ↓
-Navigate to paintastreet.com/#tile-ID
-    ↓
-Click "upvote" button
-    ↓
-Wait for Turnstile completion (cookie change)
-    ↓
-Extract vote-specific cookie
+Reset vote count for new cookie
     ↓
 Return to main loop
 ```
 
 ## Troubleshooting
 
-**Turnstile Timeout**:
-- If you see "Cookie did not change within timeout", Turnstile may require manual interaction
-- Check the visible browser window for challenges
-- Press Enter to continue after resolving manually
-- Turnstile auto-passes sometimes but may require interaction
+**Cookie File Not Found**:
+- Ensure `valid_cookies.txt` exists in the project root
+- Check file permissions and location
 
-**Cookie Not Changing**:
-- System polls for cookie changes every 500ms
-- If Turnstile is blocked or requires manual completion, cookie won't change
-- May need to complete Turnstile in the visible browser window
+**No Valid Cookies**:
+- Make sure `valid_cookies.txt` contains valid session cookies
+- Each line should have one cookie value
+- Remove empty lines and whitespace
 
 **Rate Limit Errors**:
 - Normal behavior - system will automatically rotate cookies
 - Check statistics output for total errors
+- If all cookies are exhausted, the program will stop
 
-**Browser Window**:
-- Browser opens in visible mode (required for Turnstile)
-- Don't close the browser window - it's reused for cookie generation
-- Each cookie rotation creates a new page but uses same browser instance
+**Network Errors**:
+- Check internet connection
+- Verify PaintAStreet.com is accessible
+- Check firewall settings
+
+**Cookie Exhaustion**:
+- All cookies have been used and rate limited
+- Program will need fresh cookies from `valid_cookies.txt`
+- Update the file with new valid session cookies
 
 ## Stopping
 

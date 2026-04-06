@@ -5,7 +5,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node simple-voter.js"
   },
   "dependencies": {
     "got": "^15.0.0",
