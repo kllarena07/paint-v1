@@ -1,0 +1,13 @@
+{
+  "name": "automate-voting",
+  "version": "1.0.0",
+  "description": "Automated voting system with cookie rotation",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "playwright": "^1.48.0"
+  }
+}
