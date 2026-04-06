@@ -2,7 +2,7 @@ import fs from 'fs';
 import { request } from 'undici';
 
 const TILE_ID = '019d60ad-9672-7bad-9587-8ad072c1de72';
-const REQUEST_INTERVAL_MS = 1600;
+const REQUEST_INTERVAL_MS = 2000;
 const COOKIES_FILE = 'valid_cookies.txt';
 
 class SimpleVoter {
