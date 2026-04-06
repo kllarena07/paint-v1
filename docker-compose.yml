@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  voter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: automate-voting
+    restart: unless-stopped
+    volumes:
+      - ./valid_cookies.txt:/app/valid_cookies.txt:ro
+    environment:
+      - TILE_ID=${TILE_ID:-019d60ad-9672-7bad-9587-8ad072c1de72}
+      - REQUEST_INTERVAL_MS=${REQUEST_INTERVAL_MS:-2000}
+      - MAX_VOTES_PER_COOKIE=${MAX_VOTES_PER_COOKIE:-10}
+      - COOKIES_FILE=/app/valid_cookies.txt
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

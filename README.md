@@ -21,32 +21,75 @@ https://github.com/user-attachments/assets/64c208f0-b2af-4ad4-8602-19c8a68aa55d
 
 ## Setup
 
-1. Install dependencies:
+### Prerequisites
+
+Install Docker and Docker Compose on your system:
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) (Mac/Windows)
+- [Docker Engine](https://docs.docker.com/engine/install/) (Linux)
+
+### Prepare Cookies File
+
+Create a file named `valid_cookies.txt` in the project root:
+- Add valid PaintAStreet.com session cookies, one per line
+- Each line should contain only the session cookie value (not the full cookie string)
+- Example content of `valid_cookies.txt`:
+  ```
+  your_cookie_value_1_here
+  your_cookie_value_2_here
+  your_cookie_value_3_here
+  ```
+
+### Configure Environment (Optional)
+
+Copy the example environment file and customize if needed:
 ```bash
-npm install
+cp .env.example .env
 ```
 
-2. Prepare cookies file:
-   - Create a file named `valid_cookies.txt` in the project root
-   - Add valid PaintAStreet.com session cookies, one per line
-   - Each line should contain only the session cookie value (not the full cookie string)
-   - Example content of `valid_cookies.txt`:
-     ```
-     your_cookie_value_1_here
-     your_cookie_value_2_here
-     your_cookie_value_3_here
-     ```
+Edit `.env` to change default settings like vote interval, tile ID, etc.
+
+### Build and Start
+
+Build the Docker image and start the container in the background:
+```bash
+docker-compose up -d --build
+```
 
 ## Usage
 
-Start the voting system:
+### Start the System
+
+Run the voting system in the background:
 ```bash
-node simple-voter.js
+docker-compose up -d
 ```
 
-Or update package.json and use:
+### Monitor Logs
+
+View real-time logs from the voting container:
 ```bash
-npm start
+docker-compose logs -f voter
+```
+
+### Check Status
+
+See if the container is running:
+```bash
+docker-compose ps
+```
+
+### Stop the System
+
+Gracefully stop the container:
+```bash
+docker-compose down
+```
+
+### Restart
+
+Restart the voting system:
+```bash
+docker-compose restart
 ```
 
 ## How It Works
@@ -91,30 +134,49 @@ Return to main loop
 
 ## Troubleshooting
 
+**Container Not Starting**:
+- Check if Docker daemon is running: `docker ps`
+- View container logs: `docker-compose logs voter`
+- Ensure `valid_cookies.txt` exists and is readable
+
 **Cookie File Not Found**:
 - Ensure `valid_cookies.txt` exists in the project root
-- Check file permissions and location
+- Verify Docker volume mount is correct in `docker-compose.yml`
+- Check file permissions: `ls -la valid_cookies.txt`
 
 **No Valid Cookies**:
 - Make sure `valid_cookies.txt` contains valid session cookies
 - Each line should have one cookie value
 - Remove empty lines and whitespace
+- Check logs: `docker-compose logs voter`
+
+**Permission Denied on Cookies File**:
+- Fix file permissions: `chmod 644 valid_cookies.txt`
+- Ensure the file is not owned exclusively by another user
 
 **Rate Limit Errors**:
 - Normal behavior - system will automatically rotate cookies
 - Check statistics output for total errors
-- If all cookies are exhausted, the program will stop
+- If all cookies are exhausted, the container will stop
 
 **Network Errors**:
 - Check internet connection
 - Verify PaintAStreet.com is accessible
-- Check firewall settings
+- Check firewall settings and Docker network configuration
 
 **Cookie Exhaustion**:
 - All cookies have been used and rate limited
-- Program will need fresh cookies from `valid_cookies.txt`
-- Update the file with new valid session cookies
+- Update `valid_cookies.txt` with new valid session cookies
+- Restart container: `docker-compose restart`
 
 ## Stopping
 
-Press `Ctrl+C` to stop gracefully. The system will display final statistics before shutting down.
+Stop the container gracefully:
+```bash
+docker-compose down
+```
+
+The system will display final statistics in the logs before shutting down. View the final logs:
+```bash
+docker-compose logs voter
+```
