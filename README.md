@@ -31,7 +31,12 @@ npm start
 
 ## How It Works
 
-1. **Initial Cookie**: Launches browser, navigates to paintastreet.com, bypasses Cloudflare, extracts session cookie
+1. **Cookie Generation**: 
+   - Launches browser (visible mode required for Turnstile)
+   - Navigates to specific tile page
+   - Clicks "upvote" button to trigger Cloudflare Turnstile
+   - Monitors session cookie for changes (indicates Turnstile completion)
+   - Extracts vote-specific cookie
 2. **Voting Loop**: Casts votes every 1 second using current cookie
 3. **Rate Limit Handling**: 
    - Tracks vote count (max 10 per cookie)
@@ -63,25 +68,38 @@ If cookie usage >= 10:
     ↓
 Cookie Manager
     ↓
-Navigate to paintastreet.com
+Navigate to paintastreet.com/#tile-ID
     ↓
-Wait for Cloudflare Turnstile
+Click "upvote" button
     ↓
-Extract session cookie
+Wait for Turnstile completion (cookie change)
+    ↓
+Extract vote-specific cookie
     ↓
 Return to main loop
 ```
 
 ## Troubleshooting
 
-**Cloudflare Bypass Fails**:
-- If you see "MAX RETRIES EXCEEDED - PAUSING", check if Cloudflare is blocking requests
-- Press Enter to continue after resolving the issue
-- May need to complete Turnstile manually in the browser window
+**Turnstile Timeout**:
+- If you see "Cookie did not change within timeout", Turnstile may require manual interaction
+- Check the visible browser window for challenges
+- Press Enter to continue after resolving manually
+- Turnstile auto-passes sometimes but may require interaction
+
+**Cookie Not Changing**:
+- System polls for cookie changes every 500ms
+- If Turnstile is blocked or requires manual completion, cookie won't change
+- May need to complete Turnstile in the visible browser window
 
 **Rate Limit Errors**:
 - Normal behavior - system will automatically rotate cookies
 - Check statistics output for total errors
+
+**Browser Window**:
+- Browser opens in visible mode (required for Turnstile)
+- Don't close the browser window - it's reused for cookie generation
+- Each cookie rotation creates a new page but uses same browser instance
 
 ## Stopping
 

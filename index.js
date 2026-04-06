@@ -27,11 +27,14 @@ async function main() {
     process.exit(0);
   });
 
-  setInterval(() => {
-    votingEngine.vote().catch(error => {
+  async function votingLoop() {
+    try {
+      await votingEngine.vote();
+    } catch (error) {
       console.error('[Main] ❌ Vote error:', error.message);
-    });
-  }, VOTE_INTERVAL_MS);
+    }
+    setTimeout(votingLoop, VOTE_INTERVAL_MS);
+  }
 
   setInterval(() => {
     votingEngine.printStats();
@@ -41,7 +44,7 @@ async function main() {
   console.log(`📊 Stats every ${STATS_INTERVAL_MS}ms`);
   console.log('Press Ctrl+C to stop\n');
 
-  await votingEngine.vote();
+  votingLoop();
 }
 
 main().catch(error => {
