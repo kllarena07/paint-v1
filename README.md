@@ -30,6 +30,7 @@ Install Node.js and npm on your system:
 - npm comes bundled with Node.js
 
 Verify installation:
+
 ```bash
 node --version
 npm --version
@@ -72,10 +73,12 @@ The system will start voting and display real-time statistics in the console.
 ### Monitor Logs
 
 All logs are displayed directly in the console when running `npm start`. You'll see:
+
 - Vote progress and timestamps
 - Cookie rotation status
 - Success/error messages
 - Total votes and cycles completed
+- Platform information (OS, locale, etc.)
 
 ### Check Status
 

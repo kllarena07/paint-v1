@@ -1,16 +1,19 @@
 import fs from 'fs';
 import { request } from 'undici';
+import PlatformDetector from './lib/platform-detector.js';
 
 const TILE_ID = '019d60ad-9672-7bad-9587-8ad072c1de72';
-const REQUEST_INTERVAL_MS = 1500;
-const COOKIES_FILE = 'valid_cookies.txt';
+const REQUEST_INTERVAL_MS = 2000;
+const MAX_VOTES_PER_COOKIE = 10;
+const DEFAULT_COOKIES_FILE = 'valid_cookies.txt';
 
 class SimpleVoter {
-  constructor() {
+  constructor(cookiesFile = DEFAULT_COOKIES_FILE) {
+    this.cookiesFile = cookiesFile;
     this.cookies = [];
     this.currentCookieIndex = 0;
     this.currentCookieVotes = 0;
-    this.maxVotesPerCookie = 1;
+    this.maxVotesPerCookie = MAX_VOTES_PER_COOKIE;
     this.totalVotes = 0;
     this.cyclesCompleted = 0;
     this.isRunning = false;
@@ -21,40 +24,27 @@ class SimpleVoter {
       keepAliveMaxTimeout: 300000
     };
     this.requestTimeout = 30000;
-    this.headers = {
-      'accept': '*/*',
-      'accept-language': 'en-US,en;q=0.9',
-      'content-type': 'application/json',
-      'origin': 'https://paintastreet.com',
-      'priority': 'u=1, i',
-      'referer': 'https://paintastreet.com/',
-      'sec-ch-ua': '"Chromium";v="146", "Not-A.Brand";v="24", "Google Chrome";v="146"',
-      'sec-ch-ua-mobile': '?0',
-      'sec-ch-ua-platform': '"macOS"',
-      'sec-fetch-dest': 'empty',
-      'sec-fetch-mode': 'cors',
-      'sec-fetch-site': 'same-site',
-      'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36'
-    };
+    this.platformDetector = new PlatformDetector();
+    this.headers = this.platformDetector.generateHeaders();
   }
 
   loadCookies() {
     try {
-      if (!fs.existsSync(COOKIES_FILE)) {
-        throw new Error(`File not found: ${COOKIES_FILE}`);
+      if (!fs.existsSync(this.cookiesFile)) {
+        throw new Error(`File not found: ${this.cookiesFile}`);
       }
 
-      const content = fs.readFileSync(COOKIES_FILE, 'utf8');
+      const content = fs.readFileSync(this.cookiesFile, 'utf8');
       this.cookies = content
         .split('\n')
         .map(line => line.trim())
         .filter(line => line.length > 0);
 
       if (this.cookies.length === 0) {
-        throw new Error(`No valid cookies found in ${COOKIES_FILE}`);
+        throw new Error(`No valid cookies found in ${this.cookiesFile}`);
       }
 
-      console.log(`📋 Loaded ${this.cookies.length} valid cookies from ${COOKIES_FILE}`);
+      console.log(`📋 Loaded ${this.cookies.length} valid cookies from ${this.cookiesFile}`);
       console.log('');
 
     } catch (error) {
@@ -86,6 +76,7 @@ class SimpleVoter {
     console.log(`[SIMPLE-VOTER] 📤 Request: PUT /tiles/${TILE_ID}/vote`);
     console.log(`[SIMPLE-VOTER] 🍪 Cookie: ${cookie.substring(0, 20)}...`);
     console.log(`[SIMPLE-VOTER] 📦 Body: {"direction":"up"}`);
+    console.log(`[SIMPLE-VOTER] 🖥️  Platform: ${this.platformDetector.platform.toUpperCase()}`);
 
     const requestHeaders = {
       ...this.headers,
@@ -161,11 +152,19 @@ class SimpleVoter {
     console.log('==========================================');
     console.log('');
 
+    const platformInfo = this.platformDetector.getPlatformInfo();
+    console.log(`🖥️  Platform: ${platformInfo.platform.toUpperCase()}`);
+    console.log(`🌐 Locale: ${platformInfo.locale}`);
+    console.log(`💻 Hostname: ${platformInfo.hostname}`);
+    console.log(`🏗️  Architecture: ${platformInfo.arch}`);
+    console.log('');
+
     this.loadCookies();
     this.isRunning = true;
 
     console.log(`⏰ Voting every ${REQUEST_INTERVAL_MS}ms`);
     console.log(`📋 Using ${this.cookies.length} cookies with rotation`);
+    console.log(`🔄 Max votes per cookie: ${this.maxVotesPerCookie}`);
     console.log(`🌐 HTTP/2 enabled (via Undici)`);
     console.log('Press Ctrl+C to stop\n');
     console.log('');
@@ -189,7 +188,23 @@ class SimpleVoter {
   }
 }
 
-const voter = new SimpleVoter();
+function parseArgs() {
+  const args = process.argv.slice(2);
+  const parsed = {};
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--cookies' && args[i + 1]) {
+      parsed.cookies = args[i + 1];
+      i++;
+    }
+  }
+
+  return parsed;
+}
+
+const args = parseArgs();
+const voter = new SimpleVoter(args.cookies);
 
 process.on('SIGINT', () => {
   voter.stop();
